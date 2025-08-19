@@ -1,42 +1,109 @@
 import Image from "next/image";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize from "rehype-sanitize";
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
-import type { ElementContent } from "hast";
+import RichBlogRenderer from "../../components/RichBlogRenderer";
 
-// Get post data from markdown file
-async function getPost(slug: string) {
-  const markdownFile = fs.readFileSync(
-    path.join("content/blog", slug + ".md"),
-    "utf-8"
-  );
-  const { data: frontmatter, content } = matter(markdownFile);
-  return {
-    frontmatter,
-    content,
+// Interface for blog post from API
+interface BlogSection {
+  type: 'header' | 'paragraph' | 'image' | 'quote' | 'list' | 'code' | 'divider' | 'gallery' | 'video';
+  title?: string;
+  content?: string;
+  data?: any;
+  order: number;
+}
+
+interface BlogPost {
+  _id: string;
+  title: string;
+  excerpt: string;
+  slug: string;
+  category: string;
+  tags: string[];
+  image: string;
+  date: string;
+  featured: boolean;
+  author: {
+    _id: string;
+    name: string;
+    avatar: string;
+    bio: string;
+  };
+  readingTime: number;
+  views: number;
+  likes: number;
+  content: string;
+  sections?: BlogSection[];
+  comments?: any[];
+  updatedAt?: string;
+  createdAt?: string;
+  seo?: {
+    metaTitle?: string;
+    metaDescription?: string;
+    socialImage?: string;
   };
 }
 
-export async function generateStaticParams() {
-  const files = fs.readdirSync(path.join("content/blog"));
-  const paths = files.map((filename) => ({
-    slug: filename.replace(".md", ""),
-  }));
+// Get post data from API
+async function getPost(slug: string): Promise<BlogPost | null> {
+  try {
+    const response = await fetch(`http://localhost:3000/api/blogs/${slug}`, {
+      cache: 'no-store', // Ensure fresh data
+    });
 
-  return paths;
+    if (!response.ok) {
+      return null;
+    }
+
+    const post = await response.json();
+    return post;
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    return null;
+  }
+}
+
+// Get all posts for static generation
+async function getAllPosts(): Promise<BlogPost[]> {
+  try {
+    const response = await fetch('http://localhost:3000/api/blogs', {
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const posts = await response.json();
+    return posts;
+  } catch (error) {
+    console.error('Error fetching all posts:', error);
+    return [];
+  }
+}
+
+export async function generateStaticParams() {
+  const posts = await getAllPosts();
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export default async function BlogPostPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  readonly params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
   const post = await getPost(slug);
+
+  if (!post) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Post Not Found</h1>
+          <p className="text-gray-600">The blog post you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
@@ -45,210 +112,128 @@ export default async function BlogPostPage({
         <header className="mb-8">
           <div className="flex items-center text-sm text-gray-500 mb-4">
             <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
-              {post.frontmatter.category}
+              {post.category}
             </span>
             <span className="mx-2">•</span>
             <time>
-              {new Date(post.frontmatter.date).toLocaleDateString("vi-VN")}
+              {new Date(post.date).toLocaleDateString("vi-VN")}
             </time>
             <span className="mx-2">•</span>
-            <span>{post.frontmatter.readTime}</span>
+            <span>{post.readingTime} phút đọc</span>
+            <span className="mx-2">•</span>
+            <span>👁️ {post.views} lượt xem</span>
           </div>
           <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-black">
-            {post.frontmatter.title}
+            {post.title}
           </h1>
           <p className="text-xl text-gray-600 mb-6">
-            {post.frontmatter.excerpt}
+            {post.excerpt}
           </p>
 
           {/* Author info */}
-          <div className="flex items-center">
-            <div
-              className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-white"
-              style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
-            >
-              <Image
-                src={post.frontmatter.author.avatar}
-                alt={post.frontmatter.author.name}
-                fill
-                className="object-cover"
-              />
+          {post.author && (
+            <div className="flex items-center">
+              <div
+                className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-white"
+                style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
+              >
+                <Image
+                  src={post.author.avatar || '/images/default-avatar.jpg'}
+                  alt={post.author.name || 'Author'}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+              <div className="ml-4">
+                <p className="font-semibold text-gray-900">
+                  {post.author.name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {post.author.bio || 'Blog Author'}
+                </p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="font-semibold text-gray-900">
-                {post.frontmatter.author.name}
-              </p>
-              <p className="text-sm text-gray-600">
-                {post.frontmatter.author.bio}
-              </p>
-            </div>
-          </div>
+          )}
         </header>
 
+        {/* Featured Image */}
+        {post.image && (
+          <div className="mb-8">
+            <div
+              className="relative h-[400px] w-full rounded-xl overflow-hidden"
+              style={{ boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+            >
+              <Image
+                src={post.image}
+                alt={post.title}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          </div>
+        )}
+
         {/* Content */}
-        <div className="prose prose-lg max-w-none mb-12 prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-black prose-a:font-medium prose-blockquote:border-gray-500 prose-strong:text-gray-900 prose-img:rounded-xl prose-img:shadow-lg prose-pre:bg-gray-800 prose-pre:text-gray-100 prose-code:text-gray-700 prose-code:before:content-none prose-code:after:content-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeSanitize]}
-            components={{
-              img: (props) => {
-                const { src, alt } = props;
-                // Return null for img inside p tag to prevent hydration error
-                if (
-                  props.node?.position?.start?.line ===
-                  props.node?.position?.end?.line
-                ) {
-                  return null;
-                }
-                return (
-                  <div className="my-8">
-                    <div
-                      className="relative h-[400px] w-full rounded-xl overflow-hidden"
-                      style={{ boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
-                    >
-                      <Image
-                        src={typeof src === "string" ? src : ""}
-                        alt={alt || ""}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </div>
-                );
-              },
-              p: ({ children, node }) => {
-                if (!node)
-                  return (
-                    <p className="text-lg leading-relaxed mb-6">{children}</p>
-                  );
-
-                // Check if p contains an img
-                const hasImg = node.children?.some(
-                  (child): child is ElementContent =>
-                    typeof child === "object" &&
-                    child !== null &&
-                    "type" in child &&
-                    child.type === "element" &&
-                    "tagName" in child &&
-                    child.tagName === "img"
-                );
-
-                if (hasImg) {
-                  // If p contains img, render the img separately
-                  const imgNode = node.children?.find(
-                    (child): child is ElementContent =>
-                      typeof child === "object" &&
-                      child !== null &&
-                      "type" in child &&
-                      child.type === "element" &&
-                      "tagName" in child &&
-                      child.tagName === "img"
-                  );
-
-                  if (imgNode && "properties" in imgNode) {
-                    return (
-                      <>
-                        <div className="my-8">
-                          <div
-                            className="relative h-[400px] w-full rounded-xl overflow-hidden"
-                            style={{ boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
-                          >
-                            <Image
-                              src={(imgNode.properties?.src as string) || ""}
-                              alt={(imgNode.properties?.alt as string) || ""}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        </div>
-                        {/* Render other children if any */}
-                        {node.children
-                          .filter(
-                            (child): child is ElementContent =>
-                              !(
-                                typeof child === "object" &&
-                                child !== null &&
-                                "type" in child &&
-                                child.type === "element" &&
-                                "tagName" in child &&
-                                child.tagName === "img"
-                              )
-                          )
-                          .map((child, i) => (
-                            <p key={i} className="text-lg leading-relaxed mb-6">
-                              {child.type === "text" ? child.value : null}
-                            </p>
-                          ))}
-                      </>
-                    );
-                  }
-                }
-
-                return (
-                  <p className="text-lg leading-relaxed mb-6">{children}</p>
-                );
-              },
-              h1: ({ children }) => (
-                <h1 className="text-4xl font-bold mb-8 mt-12 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-black">
-                  {children}
-                </h1>
-              ),
-              h2: ({ children }) => (
-                <h2 className="text-3xl font-bold mb-6 mt-10 text-gray-900">
-                  {children}
-                </h2>
-              ),
-              h3: ({ children }) => (
-                <h3 className="text-2xl font-semibold mb-4 mt-8">{children}</h3>
-              ),
-              ul: ({ children }) => (
-                <ul className="list-disc list-inside space-y-3 mb-6">
-                  {children}
-                </ul>
-              ),
-              ol: ({ children }) => (
-                <ol className="list-decimal list-inside space-y-3 mb-6">
-                  {children}
-                </ol>
-              ),
-              li: ({ children }) => (
-                <li className="text-gray-600">{children}</li>
-              ),
-              blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-black pl-4 italic my-6 text-gray-700 bg-gray-50 py-2 px-4 rounded-r-lg">
-                  {children}
-                </blockquote>
-              ),
-              pre: ({ children }) => (
-                <pre
-                  className="bg-gray-900 text-gray-100 p-4 my-6 overflow-x-auto rounded-lg"
-                  style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
-                >
-                  {children}
-                </pre>
-              ),
-              code: ({ children }) => (
-                <code className="bg-gray-100 rounded px-1 py-0.5 text-black">
-                  {children}
-                </code>
-              ),
-            }}
-          >
-            {post.content}
-          </ReactMarkdown>
+        <div className="mb-12">
+          {post.sections && post.sections.length > 0 ? (
+            // Render rich content using sections
+            <RichBlogRenderer sections={post.sections} />
+          ) : (
+            // Fallback to plain text content
+            <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-black prose-a:font-medium prose-blockquote:border-gray-500 prose-strong:text-gray-900">
+              <div className="whitespace-pre-wrap text-lg leading-relaxed text-gray-700">
+                {post.content}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tags */}
-        <div className="mb-12">
-          <div className="flex flex-wrap gap-2">
-            {post.frontmatter.tags.map((tag: string) => (
-              <span
-                key={tag}
-                className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors cursor-pointer"
-              >
-                {tag}
+        {post.tags && post.tags.length > 0 && (
+          <div className="mb-12">
+            <h3 className="text-lg font-semibold mb-4">Tags:</h3>
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Post Stats */}
+        <div className="mb-8 p-6 bg-gray-50 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6 text-sm text-gray-600">
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                </svg>
+                {post.views} lượt xem
               </span>
-            ))}
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                </svg>
+                {post.likes} lượt thích
+              </span>
+              <span className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" />
+                </svg>
+                {post.comments?.length || 0} bình luận
+              </span>
+            </div>
+            <div className="text-sm text-gray-500">
+              Cập nhật: {new Date(post.updatedAt || post.createdAt || post.date).toLocaleDateString("vi-VN")}
+            </div>
           </div>
         </div>
 
@@ -271,7 +256,34 @@ export default async function BlogPostPage({
             </svg>
           </button>
         </div>
+
+        {/* Related Posts or Call to Action */}
+        <div className="border-t pt-8">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-8 text-center">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Bạn thích bài viết này?
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Đăng ký để nhận thông báo về những bài viết mới nhất về Airbnb và bất động sản
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+              <input
+                type="email"
+                placeholder="Email của bạn"
+                className="flex-1 px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 bg-black text-white font-medium rounded-md hover:bg-gray-800 transition-all duration-300"
+                style={{ boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
+              >
+                Đăng ký
+              </button>
+            </div>
+          </div>
+        </div>
       </article>
     </div>
   );
 }
+
