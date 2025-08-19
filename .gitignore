@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Docker volumes and data
+docker-data/
+mongodb_data/
+
+# logs
+logs/
+*.log
