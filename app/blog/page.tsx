@@ -1,38 +1,51 @@
 import Image from "next/image";
 import Link from "next/link";
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
 
-// Get all posts
-async function getPosts() {
-  const files = fs.readdirSync(path.join("content/blog"));
+// Interface for blog post from API
+interface BlogPost {
+  _id: string;
+  title: string;
+  excerpt: string;
+  slug: string;
+  category: string;
+  tags: string[];
+  image: string;
+  date: string;
+  featured: boolean;
+  author: {
+    _id: string;
+    name: string;
+    avatar: string;
+    bio: string;
+  };
+  readingTime: number;
+  views: number;
+  likes: number;
+}
 
-  const posts = files.map((filename) => {
-    const markdownWithMeta = fs.readFileSync(
-      path.join("content/blog", filename),
-      "utf-8"
-    );
+// Get all posts from API
+async function getPosts(): Promise<BlogPost[]> {
+  try {
+    const response = await fetch('http://localhost:3000/api/blogs', {
+      cache: 'no-store', // Ensure fresh data
+    });
 
-    const { data: frontmatter } = matter(markdownWithMeta);
+    if (!response.ok) {
+      throw new Error('Failed to fetch posts');
+    }
 
-    return {
-      frontmatter,
-      slug: filename.replace(".md", ""),
-    };
-  });
-
-  return posts.sort((a, b) => {
-    const dateA = new Date(a.frontmatter.date);
-    const dateB = new Date(b.frontmatter.date);
-    return dateB.getTime() - dateA.getTime();
-  });
+    const posts = await response.json();
+    return posts;
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
 }
 
 export default async function BlogPage() {
   const posts = await getPosts();
-  const featuredPosts = posts.filter((post) => post.frontmatter.featured);
-  const recentPosts = posts.filter((post) => !post.frontmatter.featured);
+  const featuredPosts = posts.filter((post) => post.featured);
+  const recentPosts = posts.filter((post) => !post.featured);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-16">
@@ -57,7 +70,7 @@ export default async function BlogPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredPosts.map((post) => (
               <Link
-                key={post.slug}
+                key={post._id}
                 href={`/blog/${post.slug}`}
                 className="group"
               >
@@ -70,30 +83,48 @@ export default async function BlogPage() {
                 >
                   <div className="relative h-48">
                     <Image
-                      src={post.frontmatter.image}
-                      alt={post.frontmatter.title}
+                      src={post.image || '/images/blog/default.jpg'}
+                      alt={post.title}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      unoptimized
                     />
                   </div>
                   <div className="p-6">
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                        {post.frontmatter.category}
+                        {post.category}
                       </span>
                       <span className="mx-2">•</span>
                       <time>
-                        {new Date(post.frontmatter.date).toLocaleDateString(
-                          "vi-VN"
-                        )}
+                        {new Date(post.date).toLocaleDateString("vi-VN")}
                       </time>
+                      <span className="mx-2">•</span>
+                      <span>{post.readingTime} phút đọc</span>
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-black transition-colors duration-300">
-                      {post.frontmatter.title}
+                      {post.title}
                     </h3>
                     <p className="text-gray-600 line-clamp-2">
-                      {post.frontmatter.excerpt}
+                      {post.excerpt}
                     </p>
+                    <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <Image
+                          src={post.author?.avatar || '/images/default-avatar.jpg'}
+                          alt={post.author?.name || 'Author'}
+                          width={24}
+                          height={24}
+                          className="rounded-full mr-2"
+                          unoptimized
+                        />
+                        <span>{post.author?.name || 'Unknown Author'}</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span>👁️ {post.views}</span>
+                        <span>❤️ {post.likes}</span>
+                      </div>
+                    </div>
                   </div>
                 </article>
               </Link>
@@ -110,7 +141,7 @@ export default async function BlogPage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {recentPosts.map((post) => (
-            <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
+            <Link key={post._id} href={`/blog/${post.slug}`} className="group">
               <article
                 className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
                 style={{
@@ -120,8 +151,8 @@ export default async function BlogPage() {
               >
                 <div className="relative h-48">
                   <Image
-                    src={post.frontmatter.image}
-                    alt={post.frontmatter.title}
+                    src={post.image || '/images/blog/default.jpg'}
+                    alt={post.title}
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
@@ -129,21 +160,37 @@ export default async function BlogPage() {
                 <div className="p-6">
                   <div className="flex items-center text-sm text-gray-500 mb-2">
                     <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded">
-                      {post.frontmatter.category}
+                      {post.category}
                     </span>
                     <span className="mx-2">•</span>
                     <time>
-                      {new Date(post.frontmatter.date).toLocaleDateString(
-                        "vi-VN"
-                      )}
+                      {new Date(post.date).toLocaleDateString("vi-VN")}
                     </time>
+                    <span className="mx-2">•</span>
+                    <span>{post.readingTime} phút đọc</span>
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-black transition-colors duration-300">
-                    {post.frontmatter.title}
+                    {post.title}
                   </h3>
                   <p className="text-gray-600 line-clamp-2">
-                    {post.frontmatter.excerpt}
+                    {post.excerpt}
                   </p>
+                  <div className="flex items-center justify-between mt-4 text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <Image
+                        src={post.author?.avatar || '/images/default-avatar.jpg'}
+                        alt={post.author?.name || 'Author'}
+                        width={24}
+                        height={24}
+                        className="rounded-full mr-2"
+                      />
+                      <span>{post.author?.name || 'Unknown Author'}</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span>👁️ {post.views}</span>
+                      <span>❤️ {post.likes}</span>
+                    </div>
+                  </div>
                 </div>
               </article>
             </Link>

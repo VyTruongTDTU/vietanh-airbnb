@@ -12,7 +12,7 @@ const bookingRoutes = require("./backend/routes/bookingRoute");
 const courseListingRoutes = require("./backend/routes/courseListingRoutes");
 const enrollmentRoute = require("./backend/routes/enrollmentRoute");
 const adminRoute = require("./backend/routes/adminRoute");
-const blogRoutes = require(".backend/routes/blogPostRoute");
+const blogRoutes = require("./backend/routes/blogPostRoute");
 
 
 const dev = process.env.NODE_ENV !== "production";
