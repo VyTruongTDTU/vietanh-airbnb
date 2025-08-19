@@ -1,0 +1,212 @@
+"use client";
+
+// Sử dụng SVG trực tiếp thay vì import từ lucide-react vì các biểu tượng đã bị deprecated
+import Link from "next/link";
+import Image from "next/image";
+
+export default function Contact() {
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-12 min-h-screen mt-16">
+      <div className="text-center mb-12">
+        <div className="relative w-32 h-32 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gray-200 to-white -m-1 animate-spin-slow"></div>
+          <Image
+            src="/images/avatar.jpg"
+            alt="Nguyễn Việt Anh"
+            fill
+            className="rounded-full object-cover border-2 border-white"
+            priority
+            style={{ boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+          />
+        </div>
+        <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-black">
+          Nguyễn Việt Anh
+        </h1>
+        <p className="text-xl text-gray-600">Founder: Blue White and Home</p>
+        <p className="text-xl text-gray-600 mb-8">
+          Chuyên gia Airbnb với hơn 5 năm kinh nghiệm quản lý và tư vấn
+        </p>
+      </div>
+
+      <div
+        className="bg-gradient-to-r from-gray-50 to-white p-8 rounded-2xl mb-12"
+        style={{
+          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+          border: "1px solid rgba(0,0,0,0.05)",
+        }}
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-black">
+          Giúp bạn kiếm tiền từ Airbnb miễn phí
+        </h2>
+        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div
+            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+            style={{
+              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+              border: "1px solid rgba(0,0,0,0.05)",
+            }}
+          >
+            <h3 className="font-semibold text-lg mb-2">Tư vấn 1-1 miễn phí</h3>
+            <p className="text-gray-600">
+              Đặt lịch hẹn để được tư vấn trực tiếp về cách bắt đầu kinh doanh
+              Airbnb hiệu quả
+            </p>
+          </div>
+          <div
+            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+            style={{
+              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+              border: "1px solid rgba(0,0,0,0.05)",
+            }}
+          >
+            <h3 className="font-semibold text-lg mb-2">Cộng đồng hỗ trợ</h3>
+            <p className="text-gray-600">
+              Tham gia cộng đồng host Airbnb để học hỏi và chia sẻ kinh nghiệm
+            </p>
+          </div>
+          <div
+            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+            style={{
+              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+              border: "1px solid rgba(0,0,0,0.05)",
+            }}
+          >
+            <h3 className="font-semibold text-lg mb-2">Tài liệu & Template</h3>
+            <p className="text-gray-600">
+              Truy cập kho tài liệu và template miễn phí để tối ưu listing của
+              bạn
+            </p>
+          </div>
+          <div
+            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+            style={{
+              boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+              border: "1px solid rgba(0,0,0,0.05)",
+            }}
+          >
+            <h3 className="font-semibold text-lg mb-2">Video hướng dẫn</h3>
+            <p className="text-gray-600">
+              Xem các video hướng dẫn chi tiết về quản lý và vận hành Airbnb
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="https://www.instagram.com/nguyenvietanhnov/"
+          target="_blank"
+          className="flex items-center p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+          style={{
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+            border: "1px solid rgba(0,0,0,0.05)",
+          }}
+        >
+          <svg
+            className="w-8 h-8 text-[#E4405F]"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+          </svg>
+          <div className="ml-4">
+            <h2 className="text-xl font-semibold">Instagram</h2>
+            <p className="text-gray-600">@nguyenvietanhnov</p>
+          </div>
+        </Link>
+
+        <Link
+          href="https://www.facebook.com/nguyenvietanhnov"
+          target="_blank"
+          className="flex items-center p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+          style={{
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+            border: "1px solid rgba(0,0,0,0.05)",
+          }}
+        >
+          <svg
+            className="w-8 h-8 text-[#1877F2]"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+          </svg>
+          <div className="ml-4">
+            <h2 className="text-xl font-semibold">Facebook</h2>
+            <p className="text-gray-600">@nguyenvietanhnov</p>
+          </div>
+        </Link>
+
+        <Link
+          href="https://www.youtube.com/@nguyenvietanhnov"
+          target="_blank"
+          className="flex items-center p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+          style={{
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+            border: "1px solid rgba(0,0,0,0.05)",
+          }}
+        >
+          <svg
+            className="w-8 h-8 text-[#FF0000]"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+          </svg>
+          <div className="ml-4">
+            <h2 className="text-xl font-semibold">YouTube</h2>
+            <p className="text-gray-600">@nguyenvietanhnov</p>
+          </div>
+        </Link>
+
+        <Link
+          href="mailto:contact@nguyenvietanh.com"
+          className="flex items-center p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300"
+          style={{
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+            border: "1px solid rgba(0,0,0,0.05)",
+          }}
+        >
+          <svg
+            className="w-8 h-8 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <div className="ml-4">
+            <h2 className="text-xl font-semibold">Email</h2>
+            <p className="text-gray-600">contact@nguyenvietanh.com</p>
+          </div>
+        </Link>
+      </div>
+
+      <div className="mt-12 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-black">
+            Bắt đầu hành trình Airbnb của bạn ngay hôm nay
+          </h3>
+          <p className="text-lg text-gray-600 mb-6">
+            Với kinh nghiệm quản lý nhiều căn hộ Airbnb thành công, tôi sẽ giúp
+            bạn:
+          </p>
+          <ul className="text-left text-gray-600 space-y-2 mb-8">
+            <li>✓ Tối ưu listing để tăng booking</li>
+            <li>✓ Thiết lập quy trình vận hành hiệu quả</li>
+            <li>✓ Xây dựng thương hiệu cá nhân</li>
+            <li>✓ Phát triển bền vững trong ngành Airbnb</li>
+          </ul>
+          <p className="text-lg text-gray-600">
+            Hãy liên hệ với tôi qua các kênh trên để bắt đầu!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
