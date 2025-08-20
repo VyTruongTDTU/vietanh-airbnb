@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 const generateToken = (userId) => {
       return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -76,5 +77,31 @@ exports.logout = (req, res) => {
             res.status(200).json({ message: "Đăng xuất thành công" });
       } catch (error) {
             res.status(500).json({ message: "Lỗi khi đăng xuất", error: error.message });
+      }
+};
+
+// GET /api/auth/profile
+exports.getProfile = async (req, res) => {
+      try {
+            const token = req.headers.authorization?.replace('Bearer ', '');
+
+            if (!token) {
+                  return res.status(401).json({ message: "Token không được cung cấp" });
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.id).select('-password');
+
+            if (!user) {
+                  return res.status(404).json({ message: "Người dùng không tồn tại" });
+            }
+
+            res.json({ user });
+      } catch (error) {
+            console.error("Get profile error:", error);
+            if (error.name === 'JsonWebTokenError') {
+                  return res.status(401).json({ message: "Token không hợp lệ" });
+            }
+            res.status(500).json({ message: "Lỗi server", error: error.message });
       }
 };

@@ -24,6 +24,8 @@ export default function EnrollmentModal({
             phone: "",
       });
       const [qrImage, setQrImage] = useState<string | null>(null);
+      const [showAlreadyEnrolledPopup, setShowAlreadyEnrolledPopup] = useState(false);
+      const [existingAccountInfo, setExistingAccountInfo] = useState<{ email: string, phone: string } | null>(null);
       const enrollmentIdRef = useRef<string | null>(null);
 
       useEffect(() => {
@@ -34,7 +36,36 @@ export default function EnrollmentModal({
             return () => document.removeEventListener("keydown", escHandler);
       }, [isOpen, onClose]);
 
-      const handleSubmit = async () => {
+      // First step: Check if email already enrolled in this course
+      const checkEmailEnrollment = async () => {
+            try {
+                  const res = await fetch("/api/enrollments/check-enrollment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                              courseId,
+                              email: formData.email,
+                        }),
+                  });
+
+                  const result = await res.json();
+
+                  if (result.isEnrolled) {
+                        // Show beautiful popup for already enrolled
+                        setExistingAccountInfo({ email: formData.email, phone: result.phone || formData.phone });
+                        setShowAlreadyEnrolledPopup(true);
+                  } else {
+                        // Move to step 2: Confirm information
+                        setStep(2);
+                  }
+            } catch (err) {
+                  console.error("Check enrollment error:", err);
+                  alert("Có lỗi xảy ra khi kiểm tra thông tin.");
+            }
+      };
+
+      // Create enrollment (after payment confirmation in step 4)
+      const createEnrollment = async () => {
             try {
                   const res = await fetch("/api/enrollments", {
                         method: "POST",
@@ -50,32 +81,20 @@ export default function EnrollmentModal({
                   });
 
                   const result = await res.json();
+
                   if (res.ok && result._id) {
                         enrollmentIdRef.current = result._id;
-                        setStep(2);
+                        setStep(4); // Move to success step
                   } else {
-                        alert("Đăng ký thất bại.");
+                        alert(result.message || "Đăng ký thất bại.");
                   }
             } catch (err) {
                   console.error("Enrollment error:", err);
                   alert("Có lỗi xảy ra khi gửi yêu cầu.");
             }
-      };
-
-      const handlePaymentConfirm = async () => {
-            if (!enrollmentIdRef.current) return;
-            try {
-                  const res = await fetch(`/api/enrollments/${enrollmentIdRef.current}/payment-status`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                  });
-
-                  if (res.ok) setStep(4);
-                  else alert("Cập nhật thanh toán thất bại.");
-            } catch (err) {
-                  console.error("Payment error:", err);
-                  alert("Lỗi kết nối khi xác nhận thanh toán.");
-            }
+      }; const handlePaymentConfirm = async () => {
+            // After payment confirmation, create the enrollment and user account
+            await createEnrollment();
       };
 
       useEffect(() => {
@@ -160,7 +179,7 @@ export default function EnrollmentModal({
                                     </div>
                                     <button
                                           className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                                          onClick={handleSubmit}
+                                          onClick={checkEmailEnrollment}
                                           disabled={
                                                 !formData.fullname || !formData.email || !formData.phone
                                           }
@@ -221,19 +240,79 @@ export default function EnrollmentModal({
 
                         {step === 4 && (
                               <>
-                                    <h2 className="text-xl font-bold mb-4 text-center">Cảm ơn bạn!</h2>
-                                    <p className="text-center text-gray-700">
-                                          Bạn đã đăng ký thành công. Chúng tôi sẽ liên hệ qua email sớm nhất để xác nhận thông tin khóa học.
+                                    <h2 className="text-xl font-bold mb-4 text-center text-green-600">Đăng ký thành công!</h2>
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                                          <h3 className="font-semibold text-green-800 mb-2">Thông tin tài khoản học sinh:</h3>
+                                          <div className="space-y-2 text-sm">
+                                                <p><span className="font-medium">Email đăng nhập:</span> {formData.email}</p>
+                                                <p><span className="font-medium">Mật khẩu:</span> {formData.phone}</p>
+                                          </div>
+                                    </div>
+                                    <p className="text-center text-gray-700 mb-4">
+                                          Bạn có thể đăng nhập ngay bằng thông tin trên để bắt đầu học!
                                     </p>
-                                    <button
-                                          className="mt-6 w-full bg-gray-800 text-white py-2 rounded-lg hover:bg-gray-900"
-                                          onClick={onClose}
-                                    >
-                                          Đóng
-                                    </button>
+                                    <div className="flex gap-3">
+                                          <button
+                                                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                                                onClick={() => window.open('/student-login', '_blank')}
+                                          >
+                                                Đăng nhập ngay
+                                          </button>
+                                          <button
+                                                className="flex-1 bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700"
+                                                onClick={onClose}
+                                          >
+                                                Đóng
+                                          </button>
+                                    </div>
                               </>
                         )}
                   </div>
+
+                  {/* Beautiful popup for already enrolled users */}
+                  {showAlreadyEnrolledPopup && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                              <div className="bg-white rounded-2xl p-8 max-w-md mx-4 shadow-2xl">
+                                    <div className="text-center">
+                                          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                          </div>
+                                          <h3 className="text-xl font-bold text-gray-900 mb-2">Bạn đã đăng ký khóa học này!</h3>
+                                          <p className="text-gray-600 mb-4">
+                                                Email <strong>{existingAccountInfo?.email}</strong> đã được đăng ký cho khóa học này.
+                                          </p>
+                                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                                <h4 className="font-semibold text-blue-800 mb-2">Thông tin đăng nhập:</h4>
+                                                <p className="text-sm text-blue-700">
+                                                      <span className="font-medium">Email:</span> {existingAccountInfo?.email}
+                                                </p>
+                                                <p className="text-sm text-blue-700">
+                                                      <span className="font-medium">Mật khẩu:</span> {existingAccountInfo?.phone}
+                                                </p>
+                                          </div>
+                                          <div className="flex gap-3">
+                                                <button
+                                                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                                                      onClick={() => window.open('/student-login', '_blank')}
+                                                >
+                                                      Đăng nhập học ngay
+                                                </button>
+                                                <button
+                                                      className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700"
+                                                      onClick={() => {
+                                                            setShowAlreadyEnrolledPopup(false);
+                                                            onClose();
+                                                      }}
+                                                >
+                                                      Đóng
+                                                </button>
+                                          </div>
+                                    </div>
+                              </div>
+                        </div>
+                  )}
             </div>
       );
 }

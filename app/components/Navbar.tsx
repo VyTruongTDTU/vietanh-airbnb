@@ -2,68 +2,48 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Search, ChevronDown } from "lucide-react";
+import { Menu, X, Search, ChevronDown, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-
-type User = {
-  avatar?: string;
-  name?: string;
-  email?: string;
-  [key: string]: any;
-};
+import { useAuth } from "./AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  
+
+  const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
   const isAdminPage = pathname.startsWith("/admin");
   const isHomePage = pathname === "/";
+  const isLearningPage = pathname.startsWith("/learning");
 
+  // Hide navbar on admin pages
   if (isAdminPage) return null;
 
+  // Different styling for learning pages to prevent overlay
+  const navbarClass = isLearningPage
+    ? "relative bg-white shadow-md py-2"
+    : `fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || !isHomePage ? "bg-white shadow-md py-2" : "bg-transparent py-4"}`;
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      fetch("http://localhost:3000/api/auth/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.user) {
-            setUser(data.user);
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem("token");
-          setUser(null);
-        });
+    if (!isLearningPage) {
+      const handleScroll = () => {
+        setScrolled(window.scrollY > 10);
+      };
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
     }
-  }, [pathname]);
+  }, [isLearningPage]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
+    logout();
     setDropdownOpen(false);
-    router.push("/");
   };
 
   // Đóng dropdown nếu click ra ngoài
@@ -83,12 +63,18 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || !isHomePage ? "bg-white shadow-md py-2" : "bg-transparent py-4"
-        }`}
+      className={
+        isLearningPage
+          ? "relative bg-white shadow-md py-2"
+          : scrolled || !isHomePage
+            ? "fixed top-0 left-0 right-0 z-50 bg-white shadow-md py-2 transition-all duration-300"
+            : "fixed top-0 left-0 right-0 z-50 bg-transparent py-4 transition-all duration-300"
+      }
       style={{
-        backdropFilter: scrolled || !isHomePage ? "blur(10px)" : "none",
+        backdropFilter: (scrolled || !isHomePage) && !isLearningPage ? "blur(10px)" : "none",
         backgroundColor:
-          scrolled || !isHomePage ? "rgba(255, 255, 255, 0.9)" : "transparent",
+          (scrolled || !isHomePage) && !isLearningPage ? "rgba(255, 255, 255, 0.9)" :
+            isLearningPage ? "white" : "transparent",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -110,8 +96,8 @@ const Navbar = () => {
                     key={i}
                     href={path}
                     className={`text-sm font-medium transition-all ${scrolled || !isHomePage
-                        ? "text-gray-800 hover:text-black"
-                        : "text-white hover:text-gray-200"
+                      ? "text-gray-800 hover:text-black"
+                      : "text-white hover:text-gray-200"
                       }`}
                     style={{ letterSpacing: "0.3px" }}
                   >
@@ -126,8 +112,8 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             <button
               className={`p-2 rounded-full transition-colors ${scrolled || !isHomePage
-                  ? "text-gray-800 hover:bg-gray-100"
-                  : "text-white hover:bg-white/10"
+                ? "text-gray-800 hover:bg-gray-100"
+                : "text-white hover:bg-white/10"
                 }`}
               aria-label="Search"
             >
@@ -137,8 +123,8 @@ const Navbar = () => {
             <Link
               href="/contact"
               className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${scrolled || !isHomePage
-                  ? "text-white bg-black hover:bg-gray-800"
-                  : "text-black bg-white hover:bg-gray-100"
+                ? "text-white bg-black hover:bg-gray-800"
+                : "text-black bg-white hover:bg-gray-100"
                 }`}
               style={{
                 boxShadow:
@@ -150,50 +136,74 @@ const Navbar = () => {
               Liên hệ
             </Link>
 
-            {/* Auth */}
+            {/* Auth Section */}
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={toggleDropdown}
-                  className="flex items-center space-x-2 focus:outline-none"
+                  className="flex items-center space-x-2 focus:outline-none p-1 rounded-full hover:bg-gray-100 transition-colors"
                 >
-                  <img
-                    src={user.avatar || "/default-avatar.png"}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full border"
-                  />
-                  <ChevronDown size={16} className="text-gray-700" />
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
+                      className="w-8 h-8 rounded-full border-2 border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold">
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                  )}
+                  <ChevronDown size={16} className={`transition-transform ${dropdownOpen ? 'rotate-180' : ''} ${scrolled || !isHomePage || isLearningPage ? "text-gray-700" : "text-white"
+                    }`} />
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white border rounded-md shadow-md z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50 py-1">
+                    {user.role === 'student' && (
+                      <button
+                        className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        onClick={() => {
+                          router.push("/learning");
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        <span className="w-4 h-4 mr-3">📚</span>
+                        Khu vực học tập
+                      </button>
+                    )}
                     <button
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       onClick={() => {
                         router.push("/profile");
                         setDropdownOpen(false);
                       }}
                     >
-                      Hồ sơ
+                      <span className="w-4 h-4 mr-3">👤</span>
+                      Hồ sơ cá nhân
                     </button>
+                    <hr className="my-1" />
                     <button
-                      className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
                       onClick={handleLogout}
                     >
+                      <span className="w-4 h-4 mr-3">🚪</span>
                       Đăng xuất
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <Link
-                href="/auth/login"
-                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all ${scrolled || !isHomePage
-                    ? "text-white bg-black hover:bg-gray-800"
-                    : "text-black bg-white hover:bg-gray-100"
-                  }`}
-              >
-                Đăng nhập
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link
+                  href="/student-login"
+                  className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all ${scrolled || !isHomePage || isLearningPage
+                    ? "text-white bg-blue-600 hover:bg-blue-700 shadow-md"
+                    : "text-black bg-white hover:bg-gray-100 shadow-lg"
+                    }`}
+                >
+                  🔑 Đăng nhập
+                </Link>
+              </div>
             )}
           </div>
 
@@ -202,8 +212,8 @@ const Navbar = () => {
             <button
               onClick={toggleMenu}
               className={`inline-flex items-center justify-center p-2 rounded-md transition-colors ${scrolled || !isHomePage
-                  ? "text-gray-700 hover:bg-gray-100"
-                  : "text-white hover:bg-white/10"
+                ? "text-gray-700 hover:bg-gray-100"
+                : "text-white hover:bg-white/10"
                 }`}
               aria-label="Menu"
             >
@@ -273,10 +283,10 @@ const Navbar = () => {
               </>
             ) : (
               <Link
-                href="/auth/login"
-                className="block px-3 py-2 text-sm text-white bg-black hover:bg-gray-800 rounded-md text-center mx-3 mt-2 transition-all"
+                href="/student-login"
+                className="block px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md text-center mx-3 mt-2 transition-all"
               >
-                Đăng nhập
+                🔑 Đăng nhập
               </Link>
             )}
           </div>

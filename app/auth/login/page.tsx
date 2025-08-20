@@ -1,64 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
-      const [form, setForm] = useState({ email: "", password: "" });
-      const [error, setError] = useState("");
       const router = useRouter();
+      const searchParams = useSearchParams();
 
-      const handleChange = (e: any) =>
-            setForm({ ...form, [e.target.name]: e.target.value });
+      useEffect(() => {
+            // Redirect to student login with any redirect parameters
+            const redirectUrl = searchParams.get('redirect');
+            const targetUrl = redirectUrl
+                  ? `/student-login?redirect=${encodeURIComponent(redirectUrl)}`
+                  : '/student-login';
 
-      const handleSubmit = async (e: any) => {
-            e.preventDefault();
-
-            try {
-                  const res = await fetch("http://localhost:3000/api/auth/login", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(form),
-                  });
-
-                  const data = await res.json();
-                  if (res.ok) {
-                        localStorage.setItem("token", data.token);
-                        router.push("/courses");
-                  } else {
-                        setError(data.message || "Đăng nhập thất bại");
-                  }
-            } catch (err) {
-                  setError("Có lỗi xảy ra khi kết nối máy chủ.");
-            }
-      };
+            router.replace(targetUrl);
+      }, [router, searchParams]);
 
       return (
-            <div className="p-8 max-w-md mx-auto">
-                  <h2 className="text-2xl font-bold mb-4">Đăng nhập</h2>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                        <input
-                              name="email"
-                              type="email"
-                              placeholder="Email"
-                              onChange={handleChange}
-                              className="w-full border px-3 py-2 rounded"
-                        />
-                        <input
-                              name="password"
-                              type="password"
-                              placeholder="Mật khẩu"
-                              onChange={handleChange}
-                              className="w-full border px-3 py-2 rounded"
-                        />
-                        {error && <p className="text-red-500">{error}</p>}
-                        <button
-                              type="submit"
-                              className="w-full bg-black text-white py-2 rounded hover:bg-gray-800"
-                        >
-                              Đăng nhập
-                        </button>
-                  </form>
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                  <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-4 text-gray-600">Đang chuyển hướng...</p>
+                  </div>
             </div>
       );
 }

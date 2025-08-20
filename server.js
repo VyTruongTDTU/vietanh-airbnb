@@ -13,6 +13,7 @@ const courseListingRoutes = require("./backend/routes/courseListingRoutes");
 const enrollmentRoute = require("./backend/routes/enrollmentRoute");
 const adminRoute = require("./backend/routes/adminRoute");
 const blogRoutes = require("./backend/routes/blogPostRoute");
+const learningRoute = require("./backend/routes/learningRoute");
 
 
 const dev = process.env.NODE_ENV !== "production";
@@ -40,6 +41,7 @@ app.prepare().then(() => {
       server.use("/api/blogs", blogRoutes);
       server.use("/api/courses-listing", courseListingRoutes);
       server.use("/api/enrollments", enrollmentRoute);
+      server.use("/api/learning", learningRoute);
 
       server.use('/images', express.static(path.join(__dirname, 'app', 'images')));
 

@@ -1,5 +1,30 @@
 const mongoose = require("mongoose");
 
+const lessonSchema = new mongoose.Schema({
+      title: {
+            type: String,
+            required: true,
+      },
+      description: {
+            type: String,
+      },
+      videoUrl: {
+            type: String,
+            required: true, // YouTube video ID or full URL
+      },
+      duration: {
+            type: String, // e.g., "15:30"
+      },
+      order: {
+            type: Number,
+            required: true,
+      },
+      isPreview: {
+            type: Boolean,
+            default: false, // If true, anyone can watch without enrollment
+      }
+});
+
 const courseListingSchema = new mongoose.Schema(
       {
             slug: {
@@ -35,11 +60,19 @@ const courseListingSchema = new mongoose.Schema(
                   type: String,
             },
             curriculum: {
-                  type: [String], 
+                  type: [String],
             },
             features: {
-                  type: [String], 
+                  type: [String],
             },
+            lessons: [lessonSchema], // Array of video lessons
+            totalVideos: {
+                  type: Number,
+                  default: 0,
+            },
+            totalDuration: {
+                  type: String, // Total course duration
+            }
       },
       { timestamps: true, versionKey: false }
 );

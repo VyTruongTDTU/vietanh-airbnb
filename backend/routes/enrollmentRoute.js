@@ -4,6 +4,7 @@ const router = express.Router();
 const enrollmentController = require("../controllers/enrollmentController");
 
 router.post("/", enrollmentController.createEnrollment);
+router.post("/check-enrollment", enrollmentController.checkEnrollment);
 router.get("/", enrollmentController.getAllEnrollments);
 router.get("/:id", enrollmentController.getEnrollmentById);
 router.get("/phone/:phone", enrollmentController.getEnrollmentByPhone);
